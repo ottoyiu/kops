@@ -6,7 +6,6 @@ you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
     http://www.apache.org/licenses/LICENSE-2.0
-
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -30,16 +29,18 @@ package cloudup
 import (
 	"encoding/base64"
 	"fmt"
+	"os"
+	"strings"
+	"text/template"
+
 	"k8s.io/apimachinery/pkg/util/sets"
 	api "k8s.io/kops/pkg/apis/kops"
 	"k8s.io/kops/pkg/dns"
 	"k8s.io/kops/pkg/model"
 	"k8s.io/kops/pkg/model/components"
 	"k8s.io/kops/upup/pkg/fi"
+	"k8s.io/kops/upup/pkg/fi/cloudup/awsup"
 	"k8s.io/kops/upup/pkg/fi/cloudup/gce"
-	"os"
-	"strings"
-	"text/template"
 )
 
 type TemplateFunctions struct {
@@ -98,6 +99,9 @@ func (tf *TemplateFunctions) AddTo(dest template.FuncMap) {
 	dest["EncodeGCELabel"] = gce.EncodeGCELabel
 
 	dest["DnsControllerImage"] = tf.DnsControllerImage
+
+	// TODO: Only for AWS?
+	dest["AWSRegion"] = tf.AWSRegion
 }
 
 // SharedVPC is a simple helper function which makes the templates for a shared VPC clearer
@@ -182,4 +186,9 @@ func (tf *TemplateFunctions) DnsControllerImage() (string, error) {
 	} else {
 		return image, nil
 	}
+}
+
+// AWSRegion retrieves the AWS Region given the subnet zones
+func (tf *TemplateFunctions) AWSRegion() (string, error) {
+	return awsup.FindRegion(tf.modelContext.Cluster)
 }
